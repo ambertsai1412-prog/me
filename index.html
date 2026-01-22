@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的精緻生活看板</title>
+    <style>
+        :root {
+            --bg: #FFF9F3; --accent: #D4A373; --text: #5D534A;
+            --white: #FFFFFF; --soft-bg: #FAF3E0;
+            --water-blue: #A9D1DF; --sport-orange: #E6BAA3;
+        }
+        body {
+            background-color: var(--bg); color: var(--text);
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center;
+        }
+        .container { max-width: 600px; width: 100%; }
+        .card {
+            background: var(--white); border-radius: 25px; padding: 30px;
+            box-shadow: 0 10px 40px rgba(212, 163, 115, 0.1); margin-bottom: 20px;
+        }
+        .header { text-align: center; margin-bottom: 20px; }
+        .day-title { font-size: 1.6rem; color: var(--accent); font-weight: bold; }
+        
+        .habit-tracker { display: flex; justify-content: space-around; margin: 15px 0; gap: 10px; }
+        .habit-circle {
+            width: 45px; height: 45px; border-radius: 50%; border: 2px solid #EEE;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 5px; cursor: pointer; transition: 0.3s; font-size: 1.1rem; background: #FFF;
+        }
+        .habit-circle.active-water { background-color: var(--water-blue); border-color: var(--water-blue); color: white; }
+        .habit-circle.active-sport { background-color: var(--sport-orange); border-color: var(--sport-orange); color: white; }
+        .habit-label { font-size: 0.7rem; opacity: 0.8; }
+
+        .mood-box { display: flex; justify-content: center; gap: 12px; margin: 15px 0; }
+        .mood-btn { font-size: 1.4rem; border: none; background: none; cursor: pointer; transition: 0.2s; }
+        
+        .timeline { position: relative; border-left: 2px solid var(--soft-bg); margin-left: 10px; padding-left: 25px; }
+        .schedule-item { margin-bottom: 12px; position: relative; }
+        .schedule-item::before {
+            content: ''; position: absolute; left: -31px; top: 5px;
+            width: 10px; height: 10px; background: var(--accent); border-radius: 50%;
+        }
+        .time-label { font-size: 0.8rem; font-weight: bold; color: var(--accent); display: block; }
+        .task-label { font-size: 0.95rem; }
+
+        .todo-section { background: var(--soft-bg); border-radius: 15px; padding: 20px; }
+        .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
+        input[type="text"] { flex: 1; border: 1px solid #E6D5C3; border-radius: 8px; padding: 8px; outline: none; }
+        .add-btn { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 0 15px; cursor: pointer; }
+        .todo-item { display: flex; align-items: center; justify-content: space-between; background: #FFF; padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 0.9rem; }
+        .todo-item.done span { text-decoration: line-through; opacity: 0.5; }
+
+        .surprise-btn { background: #E6BAA3; color: white; border: none; border-radius: 50px; padding: 10px 20px; cursor: pointer; margin-top: 5px; font-size: 14px; font-weight: bold; }
+        .podcast-box { margin-top: 20px; font-size: 0.85rem; color: #8E8071; text-align: center; border-top: 1px solid #EEE; padding-top: 15px; }
+        
+        .history-list { font-size: 0.85rem; border-top: 1px dashed var(--accent); padding-top: 10px; margin-top: 10px; }
+        .history-entry { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #FAF3E0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div class="header">
+            <div id="date-text" style="opacity: 0.6; font-size: 0.8rem;"></div>
+            <div id="day-text" class="day-title"></div>
+            
+            <div class="habit-tracker">
+                <div onclick="toggleHabit('water')"><div id="habit-water" class="habit-circle">💧</div><div class="habit-label">多喝水</div></div>
+                <div onclick="toggleHabit('sport')"><div id="habit-sport" class="habit-circle">🏃</div><div class="habit-label">有運動</div></div>
+            </div>
+
+            <div class="mood-box">
+                <button class="mood-btn" onclick="logMood('🥰')">🥰</button>
+                <button class="mood-btn" onclick="logMood('😊')">😊</button>
+                <button class="mood-btn" onclick="logMood('☹️')">☹️</button>
+                <button class="mood-btn" onclick="logMood('😭')">😭</button>
+            </div>
+            <button class="surprise-btn" onclick="getSurprise()">✨ 點開今日小驚喜</button>
+        </div>
+
+        <div id="daily-schedule" class="timeline"></div>
+
+        <div class="podcast-box">
+            <b>🎧 推薦Podcast：</b><br>
+            <span id="podcast-rec"></span>
+      </div>
+    </div>
+
+    <div class="card todo-section">
+        <h4 style="margin: 0 0 10px 0;">📝 自由筆記與任務</h4>
+        <div class="input-group">
+            <input type="text" id="todo-input" placeholder="增加自定義任務...">
+            <button class="add-btn" onclick="addTodo()">+</button>
+        </div>
+        <div id="todo-list"></div>
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="margin: 0;">🗓️ 心情日記</h4>
+            <button onclick="clearMoodHistory()" style="font-size: 0.7rem; color: #BBB; background: none; border: 1px solid #EEE; border-radius: 10px; cursor: pointer;">清除</button>
+        </div>
+        <div id="mood-history" class="history-list"></div>
+    </div>
+</div>
+
+<script>
+    const routineHeader = [["10:30", "起床盥洗早餐"]];
+    const routineFooter = [["18:00", "晚餐+洗碗"], ["19:30", "運動"], ["20:00", "洗澡吹整"], ["21:00", "打遊戲/放鬆"]];
+    const schedules = {
+        1: { name: "星期一：設計與英文日", tasks: [...routineHeader, ["11:30", "讀設計書"], ["14:00", "英文練習"], ["16:30", "機車筆試"], ...routineFooter] },
+        2: { name: "星期二：英文課與作業日", tasks: [...routineHeader, ["11:30", "學習投資"], ["14:00", "英文作業"], ["16:30", "【英文課】"], ...routineFooter] },
+        3: { name: "星期三：設計與投資日", tasks: [...routineHeader, ["11:30", "讀設計書"], ["14:00", "英文練習"], ["16:30", "學習投資"], ...routineFooter] },
+        4: { name: "星期四：英文課與作業日", tasks: [...routineHeader, ["11:30", "機車練習"], ["14:00", "英文作業"], ["16:30", "【英文課】"], ...routineFooter] },
+        5: { name: "星期五：綜合複習日", tasks: [...routineHeader, ["11:30", "讀設計書"], ["14:00", "英文練習"], ["16:30", "學習投資"], ...routineFooter] },
+        6: { name: "星期六：美甲大工程日", tasks: [...routineHeader, ["11:30", "自由補眠"], ["14:00", "【美甲時間】"], ...routineFooter] },
+        0: { name: "星期日：緩衝準備日", tasks: [...routineHeader, ["11:30", "機車模擬"], ["14:00", "英文練習"], ["15:30", "彈性緩衝"], ...routineFooter] }
+    };
+
+    const podcastList = ["BBC 6-Minute English", "股癌 Gooaye", "設計師的商業思維", "理財學伴", "聽英文學英文", "姊姊說故事", "呱吉"];
+
+    function init() {
+        const now = new Date();
+        const data = schedules[now.getDay()];
+        document.getElementById('date-text').innerText = now.toLocaleDateString();
+        document.getElementById('day-text').innerText = data.name;
+        document.getElementById('daily-schedule').innerHTML = data.tasks.map(t => `<div class="schedule-item"><span class="time-label">${t[0]}</span><span class="task-label">${t[1]}</span></div>`).join('');
+        document.getElementById('podcast-rec').innerText = podcastList[Math.floor(Math.random()*podcastList.length)];
+        loadHabits(); renderTodos(); renderMoodHistory();
+    }
+
+    function getSurprise() {
+        const surprises = [
+            "【溫馨】今天的妳已經很棒了 🤍", "【美學】把心情塗成漂亮的顏色吧 💅", "【動力】多聽5分鐘英文是在為未來開路 🎧", 
+            "【儀式】洗碗時聽Podcast，家務也能變享受 🫧", "【加油】機車筆試難不倒妳的！🦁", "【提醒】記得多喝水，皮膚會亮晶晶 ✨"
+        ];
+        alert(surprises[Math.floor(Math.random()*surprises.length)]);
+    }
+
+    let habitData = JSON.parse(localStorage.getItem('habits')) || { date: "", water: false, sport: false };
+    function loadHabits() {
+        const today = new Date().toLocaleDateString();
+        if (habitData.date !== today) habitData = { date: today, water: false, sport: false };
+        updateHabitUI();
+    }
+    function toggleHabit(type) {
+        habitData[type] = !habitData[type];
+        localStorage.setItem('habits', JSON.stringify(habitData));
+        updateHabitUI();
+    }
+    function updateHabitUI() {
+        document.getElementById('habit-water').className = habitData.water ? 'habit-circle active-water' : 'habit-circle';
+        document.getElementById('habit-sport').className = habitData.sport ? 'habit-circle active-sport' : 'habit-circle';
+    }
+
+    function logMood(mood) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString();
+        const dayStr = ["(日)","(一)","(二)","(三)","(四)","(五)","(六)"][now.getDay()];
+        let history = JSON.parse(localStorage.getItem('mood_logs')) || [];
+        const todayIdx = history.findIndex(entry => entry.date === dateStr);
+        if (todayIdx > -1) history[todayIdx].mood = mood;
+        else history.unshift({ date: dateStr, day: dayStr, mood: mood });
+        localStorage.setItem('mood_logs', JSON.stringify(history.slice(0, 10)));
+        renderMoodHistory();
+    }
+
+    function renderMoodHistory() {
+        const history = JSON.parse(localStorage.getItem('mood_logs')) || [];
+        document.getElementById('mood-history').innerHTML = history.length === 0 ? "<p style='opacity:0.5; margin:0;'>記錄心情吧</p>" : 
+            history.map(h => `<div class="history-entry"><span>${h.date} ${h.day}</span><span>${h.mood}</span></div>`).join('');
+    }
+
+    function clearMoodHistory() { if (confirm("確定清除紀錄嗎？")) { localStorage.removeItem('mood_logs'); renderMoodHistory(); } }
+
+    let todos = JSON.parse(localStorage.getItem('my_todos')) || [];
+    function addTodo() {
+        const input = document.getElementById('todo-input');
+        if (!input.value.trim()) return;
+        todos.push({ text: input.value, done: false });
+        input.value = ""; saveAndRender();
+    }
+    function saveAndRender() {
+        localStorage.setItem('my_todos', JSON.stringify(todos));
+        document.getElementById('todo-list').innerHTML = todos.map((t, i) => `
+            <div class="todo-item ${t.done ? 'done' : ''}">
+                <div onclick="todos[${i}].done=!todos[${i}].done;saveAndRender()" style="flex:1; cursor:pointer;"><input type="checkbox" ${t.done?'checked':''}><span>${t.text}</span></div>
+                <button onclick="todos.splice(${i},1);saveAndRender()" style="color:#CCC; border:none; background:none;">✕</button>
+            </div>`).join('');
+    }
+
+    init();
+</script>
+</body>
+</html>
